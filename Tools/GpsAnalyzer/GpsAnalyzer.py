@@ -19,13 +19,20 @@ def plot(logdata):
     lat = np.array(gps['Lat'].listData)[:, 1][mask]
     long = np.array(gps['Lng'].listData)[:, 1][mask]
     alt = np.array(gps['Alt'].listData)[:, 1][mask]
-    speed = np.array(gps['Spd'].listData)[:, 1][mask]
+    spd = np.array(gps['Spd'].listData)[:, 1][mask]
+    # vertical velocity available
+    if 'GPA' in logdata.channels and logdata.channels['GPA']['VV'].max() > 0:
+        vz = np.array(gps['VZ'].listData)[:, 1][mask]
+        speed = np.sqrt(np.square(spd) + np.square(vz))
+    else:
+        speed = spd
+        
 
     ax.plot(lat, long, alt, color='grey')
 
     scatter = ax.scatter(lat, long, alt, c=speed, cmap='jet')
     colorbar = fig.colorbar(scatter)
-    colorbar.set_label('ground speed (m/s)')
+    colorbar.set_label('speed (m/s)')
 
     ax.set_xlabel('lat')
     ax.set_ylabel('long')
