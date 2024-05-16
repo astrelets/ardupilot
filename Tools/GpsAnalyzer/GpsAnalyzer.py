@@ -34,6 +34,7 @@ def plot(logdata):
     colorbar = fig.colorbar(scatter)
     colorbar.set_label('speed (m/s)')
 
+    ax.invert_xaxis()
     ax.set_xlabel('lat')
     ax.set_ylabel('long')
     ax.set_zlabel('alt (m)')
