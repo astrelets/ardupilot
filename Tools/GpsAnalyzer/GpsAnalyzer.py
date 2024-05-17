@@ -1,5 +1,6 @@
 import argparse
 import time
+from datetime import datetime
 import DataflashLog
 import matplotlib.pyplot as plt
 import numpy as np
@@ -47,17 +48,28 @@ def csv(logdata, outfile):
         raise ValueError("No GPS data")
     gps = logdata.channels['GPS']
     # reshaping without listData line numbers
-    time = np.array(gps['TimeUS'].listData, dtype=np.uint)[:, 1]
+    time = np.array(gps['TimeUS'].listData, dtype=np.uint64)[:, 1]
     lat = np.array(gps['Lat'].listData)[:, 1]
     long = np.array(gps['Lng'].listData)[:, 1]
     alt = np.array(gps['Alt'].listData)[:, 1]
+    
+    # calculating GMT time
+    gwk = np.array(gps['GWk'].listData, dtype=np.uint64)[:, 1]
+    gms = np.array(gps['GMS'].listData, dtype=np.uint64)[:, 1]
+    leaps = 18 #TODO: use GRXH.leapS
+    gms_epoch = int((datetime(1980, 1, 5) - datetime(1970, 1, 1)).total_seconds() * 1000)
+    gmt = (gms_epoch + gwk * 604800000 + gms - leaps * 1000).astype('datetime64[ms]')
+    
+    
     #TODO: use pandas
-    res = np.rec.fromarrays((time, lat, long, alt), dtype=[("TimeUS", np.uint), 
-                                                         ("Lat", np.float64), 
-                                                         ("Lng", np.float64),
-                                                         ("Alt", np.float64)])
+    res = np.rec.fromarrays((gmt.astype(np.uint64), time, lat, long, alt), 
+                                    dtype=[("GMT", np.uint64),
+                                         ("TimeUS", np.uint64), 
+                                         ("Lat", np.float64), 
+                                         ("Lng", np.float64),
+                                         ("Alt", np.float64)])
     np.savetxt(outfile, res, delimiter=',', 
-               fmt=['%d','%.7f','%.7f','%.1f'], 
+               fmt=['%u','%u','%.7f','%.7f','%.1f'], 
                header=','.join(res.dtype.names))
     
 
